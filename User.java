@@ -1,6 +1,6 @@
 public class User {
     private final String username;
-    private final String password;
+    private String password;
     private final Role role;
 
     public User(String username, String password, Role role) {
@@ -9,6 +9,7 @@ public class User {
         this.role = role;
     }
 
+    // Getters
     public String getUsername() {
         return username;
     }
@@ -19,5 +20,10 @@ public class User {
 
     public Role getRole() {
         return role;
+    }
+
+    // Setter for password
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

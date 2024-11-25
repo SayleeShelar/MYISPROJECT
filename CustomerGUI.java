@@ -1,8 +1,10 @@
+import java.awt.CardLayout;
 import java.io.IOException;
 import javax.swing.*;
 
 public class CustomerGUI {
     private static BankingSystem bankingSystem;
+    private static JPanel cards;
 
     public static void main(String[] args) {
         bankingSystem = new BankingSystem();
@@ -19,14 +21,21 @@ public class CustomerGUI {
         frame.setSize(600, 400);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JPanel panel = new JPanel();
-        frame.add(panel);
-        placeComponents(panel);
+        cards = new JPanel(new CardLayout());
+        frame.add(cards);
+
+        JPanel loginPanel = new JPanel();
+        placeLoginComponents(loginPanel);
+        cards.add(loginPanel, "CustomerLogin");
+
+        JPanel customerPanel = new JPanel();
+        placeCustomerComponents(customerPanel);
+        cards.add(customerPanel, "Customer");
 
         frame.setVisible(true);
     }
 
-    private static void placeComponents(JPanel panel) {
+    private static void placeLoginComponents(JPanel panel) {
         panel.setLayout(null);
 
         JLabel userLabel = new JLabel("User:");
@@ -46,116 +55,168 @@ public class CustomerGUI {
         panel.add(passwordText);
 
         JButton loginButton = new JButton("Login");
-        loginButton.setBounds(10, 80, 80, 25);
+        loginButton.setBounds(10, 80, 120, 25);
         panel.add(loginButton);
 
-        loginButton.addActionListener(_e -> {
+        JButton backButton = new JButton("Back");
+        backButton.setBounds(150, 80, 100, 25); // Adjust the bounds as needed
+        panel.add(backButton);
+
+        loginButton.addActionListener(event -> {
             String username = userText.getText();
             String password = new String(passwordText.getPassword());
+            System.out.println("Customer attempting login for user: " + username); // Debugging statement
             if (bankingSystem.authenticate(username, password)) {
+                System.out.println("Customer login successful for user: " + username); // Debugging statement
                 JOptionPane.showMessageDialog(null, "Login successful!");
-                panel.removeAll();
-                displayAccountInfo(panel);
-                displayCustomerButtons(panel);
-                panel.revalidate();
-                panel.repaint();
+                CardLayout cl = (CardLayout) (cards.getLayout());
+                cl.show(cards, "Customer");
             } else {
+                System.out.println("Customer login failed for user: " + username); // Debugging statement
                 JOptionPane.showMessageDialog(null, "Login failed!");
             }
         });
+
+        backButton.addActionListener(event -> goBackToWelcome());
     }
 
-    private static void displayAccountInfo(JPanel panel) {
+    private static void goBackToWelcome() {
+        JFrame frame = new JFrame("Banking System");
+        frame.setSize(400, 200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel panel = new JPanel();
+        frame.add(panel);
+        placeComponents(panel, frame);
+
+        frame.setVisible(true);
+    }
+
+    private static void placeComponents(JPanel panel, JFrame frame) {
         panel.setLayout(null);
 
-        JLabel accountLabel = new JLabel("Accounts:");
-        accountLabel.setBounds(10, 20, 80, 25);
-        panel.add(accountLabel);
+        JLabel welcomeLabel = new JLabel("Welcome to the Banking System");
+        welcomeLabel.setBounds(10, 20, 380, 25);
+        panel.add(welcomeLabel);
 
-        JTextArea accountArea = new JTextArea(15, 40);
-        accountArea.setBounds(100, 20, 450, 250);
-        accountArea.setEditable(false);
-        accountArea.setLineWrap(true);
-        accountArea.setWrapStyleWord(true);
-        JScrollPane scrollPane = new JScrollPane(accountArea);
-        scrollPane.setBounds(100, 20, 450, 250);
-        panel.add(scrollPane);
+        JButton adminButton = new JButton("Admin Login");
+        adminButton.setBounds(50, 80, 120, 25);
+        panel.add(adminButton);
 
-        for (Account account : bankingSystem.getAccounts()) {
-            if (bankingSystem.canAccessAccount(account)) {
-                accountArea.append("Account Number: " + account.getAccountNumber() +
-                                   ", Holder: " + account.getAccountHolderName() +
-                                   ", Balance: " + account.getBalance() + "\n");
+        JButton customerButton = new JButton("Customer Login");
+        customerButton.setBounds(200, 80, 140, 25);
+        panel.add(customerButton);
+
+        adminButton.addActionListener(e -> {
+            frame.dispose();
+            AdminGUI.main(new String[0]);
+        });
+
+        customerButton.addActionListener(e -> {
+            frame.dispose();
+            CustomerGUI.main(new String[0]);
+        });
+    }
+
+    public static void placeCustomerComponents(JPanel panel) {
+        panel.setLayout(null);
+
+        JLabel customerLabel = new JLabel("Customer Portal");
+        customerLabel.setBounds(10, 20, 160, 25);
+        panel.add(customerLabel);
+
+        JButton viewBalanceButton = new JButton("View Balance");
+        viewBalanceButton.setBounds(10, 60, 150, 25);
+        panel.add(viewBalanceButton);
+
+        JButton transferMoneyButton = new JButton("Transfer Money");
+        transferMoneyButton.setBounds(10, 100, 150, 25);
+        panel.add(transferMoneyButton);
+
+        JButton changePasswordButton = new JButton("Change Password");
+        changePasswordButton.setBounds(10, 140, 150, 25);
+        panel.add(changePasswordButton);
+
+        JButton backButton = new JButton("Back");
+        backButton.setBounds(10, 180, 150, 25);
+        panel.add(backButton);
+
+        viewBalanceButton.addActionListener(event -> viewBalance());
+        transferMoneyButton.addActionListener(event -> transferMoney());
+        changePasswordButton.addActionListener(event -> changePassword());
+        backButton.addActionListener(event -> goBackToLogin());
+    }
+
+    private static void viewBalance() {
+        String accountNumber = JOptionPane.showInputDialog("Enter your account number:");
+        String username = JOptionPane.showInputDialog("Enter your username:");
+        JPasswordField passwordField = new JPasswordField();
+        JOptionPane.showConfirmDialog(null, passwordField, "Enter your password:", JOptionPane.OK_CANCEL_OPTION);
+        String password = new String(passwordField.getPassword());
+        if (bankingSystem.authenticate(username, password)) {
+            Account account = bankingSystem.findAccount(accountNumber);
+            if (account != null) {
+                JOptionPane.showMessageDialog(null, "Current Balance: " + account.getBalance());
+            } else {
+                JOptionPane.showMessageDialog(null, "Account not found.");
             }
+        } else {
+            JOptionPane.showMessageDialog(null, "Authentication failed.");
+        }
+    }
+    private static void transferMoney() {
+        String fromAccountNumber = JOptionPane.showInputDialog("Enter your account number:");
+        String toAccountNumber = JOptionPane.showInputDialog("Enter the recipient's account number:");
+        String amountStr = JOptionPane.showInputDialog("Enter the amount to transfer:");
+        String username = JOptionPane.showInputDialog("Enter your username:");
+        JPasswordField passwordField = new JPasswordField();
+        JOptionPane.showConfirmDialog(null, passwordField, "Enter your password:", JOptionPane.OK_CANCEL_OPTION);
+        String password = new String(passwordField.getPassword());
+        if (bankingSystem.authenticate(username, password)) {
+            double amount;
+            try {
+                amount = Double.parseDouble(amountStr);
+                Account fromAccount = bankingSystem.findAccount(fromAccountNumber);
+                if (fromAccount != null && fromAccount.getBalance() >= amount) {
+                    bankingSystem.transfer(fromAccountNumber, toAccountNumber, amount, username, password);
+                    JOptionPane.showMessageDialog(null, "Transfer successful!");
+                } else {
+                    JOptionPane.showMessageDialog(null, "Insufficient balance.");
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Invalid amount.");
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Authentication failed.");
+        }
+    }
+    
+    
+    private static void changePassword() {
+        String username = JOptionPane.showInputDialog("Enter your username:");
+        JPasswordField oldPasswordField = new JPasswordField();
+        JOptionPane.showConfirmDialog(null, oldPasswordField, "Enter your old password:", JOptionPane.OK_CANCEL_OPTION);
+        String oldPassword = new String(oldPasswordField.getPassword());
+        if (bankingSystem.authenticate(username, oldPassword)) {
+            JPasswordField newPasswordField = new JPasswordField();
+            JOptionPane.showConfirmDialog(null, newPasswordField, "Enter your new password:", JOptionPane.OK_CANCEL_OPTION);
+            String newPassword = new String(newPasswordField.getPassword());
+            bankingSystem.changePassword(username, newPassword); // Call changePassword method to save the changes
+            JOptionPane.showMessageDialog(null, "Password changed successfully!");
+        } else {
+            JOptionPane.showMessageDialog(null, "Authentication failed.");
         }
     }
 
-    private static void displayCustomerButtons(JPanel panel) {
-        JButton depositButton = new JButton("Deposit");
-        depositButton.setBounds(10, 290, 150, 25);
-        panel.add(depositButton);
+    private static void goBackToLogin() {
+        JFrame frame = new JFrame("Banking System");
+        frame.setSize(400, 200);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        JButton withdrawButton = new JButton("Withdraw");
-        withdrawButton.setBounds(170, 290, 150, 25);
-        panel.add(withdrawButton);
+        JPanel panel = new JPanel();
+        frame.add(panel);
+        placeComponents(panel, frame);
 
-        JButton transferButton = new JButton("Transfer");
-        transferButton.setBounds(330, 290, 150, 25);
-        panel.add(transferButton);
-
-        depositButton.addActionListener(_e -> {
-            String accountNumber = JOptionPane.showInputDialog("Enter account number:");
-            String amountStr = JOptionPane.showInputDialog("Enter deposit amount:");
-            if (accountNumber != null && amountStr != null) {
-                try {
-                    double amount = Double.parseDouble(amountStr);
-                    bankingSystem.deposit(accountNumber.trim(), amount);
-                    panel.removeAll();
-                    displayAccountInfo(panel);
-                    displayCustomerButtons(panel);
-                    panel.revalidate();
-                    panel.repaint();
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(null, "Invalid amount entered.");
-                }
-            }
-        });
-
-        withdrawButton.addActionListener(_e -> {
-            String accountNumber = JOptionPane.showInputDialog("Enter account number:");
-            String amountStr = JOptionPane.showInputDialog("Enter withdrawal amount:");
-            if (accountNumber != null && amountStr != null) {
-                try {
-                    double amount = Double.parseDouble(amountStr);
-                    bankingSystem.withdraw(accountNumber.trim(), amount);
-                    panel.removeAll();
-                    displayAccountInfo(panel);
-                    displayCustomerButtons(panel);
-                    panel.revalidate();
-                    panel.repaint();
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(null, "Invalid amount entered.");
-                }
-            }
-        });
-
-        transferButton.addActionListener(_e -> {
-            String fromAccountNumber = JOptionPane.showInputDialog("Enter your account number:");
-            String toAccountNumber = JOptionPane.showInputDialog("Enter recipient account number:");
-            String amountStr = JOptionPane.showInputDialog("Enter transfer amount:");
-            if (fromAccountNumber != null && toAccountNumber != null && amountStr != null) {
-                try {
-                    double amount = Double.parseDouble(amountStr);
-                    bankingSystem.transfer(fromAccountNumber.trim(), toAccountNumber.trim(), amount);
-                    panel.removeAll();
-                    displayAccountInfo(panel);
-                    displayCustomerButtons(panel);
-                    panel.revalidate();
-                    panel.repaint();
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(null, "Invalid amount entered.");
-                }
-            }
-        });
+        frame.setVisible(true);
     }
 }
